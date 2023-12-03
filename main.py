@@ -3,7 +3,7 @@ import sqlite3
 import random
 import time
 
-bot = telebot.TeleBot(token='idi nahuy')
+bot = telebot.TeleBot(token='5604209602:AAHRZHswpDxnjVMf6VXHPmYlErdjjOVRBSk')
 
 conn = sqlite3.connect('most_useful.db', check_same_thread=False)
 cur = conn.cursor()
@@ -11,6 +11,7 @@ cur = conn.cursor()
 cur.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER,
+    user TEXT,
     lolis BIGINT,
     last_time_command_used INTEGER
 )
@@ -42,32 +43,32 @@ def send_help(message):
 def loli_giver(message):
     now = int(time.time())
     amount_delta = epic_random()
-    check = cur.execute("SELECT * FROM users WHERE user=?", (message.from_user.id,)).fetchone()
+    check = cur.execute("SELECT * FROM users WHERE id=?", (message.from_user.id,)).fetchone()
     if check is None:
         old_amount = 0
         time_delta = 43200
-        cur.execute("INSERT INTO users VALUES (?,?,?)", (message.from_user.id, 0, int(time.time())))
+        cur.execute("INSERT INTO users VALUES (?,?,?,?)", (message.from_user.id, message.from_user.name, 0, int(time.time())))
     else:
-        time_delta = now - check[2]
-        old_amount = check[1]
+        time_delta = now - check[3]
+        old_amount = check[2]
     if time_delta >= 43200:
-        cur.execute("UPDATE users SET lolis=? WHERE user=?", (int(old_amount + amount_delta), message.from_user.id))
+        cur.execute("UPDATE users SET lolis=? WHERE id=?", (int(old_amount + amount_delta), message.from_user.id))
         conn.commit()
-        bot.send_message(message.chat.id, f'{message.from_user.username}, you got {amount_delta} new lolis!')
+        bot.send_message(message.chat.id, f'{message.from_user.name}, you got {amount_delta} new lolis!')
     else:
-        bot.send_message(message.chat.id, f"{message.from_user.username}, you can't get new lolis yet!")
+        bot.send_message(message.chat.id, f"{message.from_user.name}, you can't get new lolis yet!")
     bot.send_message(message.chat.id, random.choice(gifs))
 
 
 @bot.message_handler(commands=['my_lolis'])
 def loli_viewer(message):
-    check = cur.execute("SELECT * FROM users WHERE user=?", (message.from_user.id,)).fetchone()
+    check = cur.execute("SELECT * FROM users WHERE id=?", (message.from_user.id,)).fetchone()
     if check is None:
         amount = 0
-        cur.execute("INSERT INTO users VALUES (?,?,?)", (message.from_user.id, 0, 0))
+        cur.execute("INSERT INTO users VALUES (?,?,?,?)", (message.from_user.id, message.from_user.name, 0, 0))
     else:
         amount = check[1]
-    bot.send_message(message.chat.id, f"{message.from_user.username}, you've got {amount} lolis!")
+    bot.send_message(message.chat.id, f"{message.from_user.name}, you've got {amount} lolis!")
 
 
 @bot.message_handler(commands=['top'])
@@ -79,7 +80,7 @@ def top_loli_people(message):
     else:
         lim = 10
     for i in range(lim):
-        message_string += f'\n{top[i][0]}: {top[i][1]} lolis\n'
+        message_string += f'\n{top[i][1]}: {top[i][2]} lolis\n'
     bot.send_message(message.chat.id, message_string)
 
 
